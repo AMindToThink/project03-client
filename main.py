@@ -137,6 +137,7 @@ def prompt():
     print("   3 => reset database")
     print("   4 => upload pdf")
     print("   5 => download results")
+    # print("   6 => upload_a")
 
     cmd = input()
 
@@ -428,12 +429,7 @@ def upload(baseurl):
         'Accept': 'application/json'
     }
     url = baseurl + f"/pdf/{userid}"
-    test_dict = {
-  "pathParameters": {
-    "userid": "80001"
-  },
-  "body": "{ \"filename\": \"junkdata.pdf\", \"data\": \"MQ0KMg0KMw0KNA0KNQ0KNg0KNw0KOA0KOQ0KMTANCjExCjEyCjEzCjE0CjE1CjE2CjE3CjE4CjE5CjIwCjIxCjIyCjIzCg==\" }"
-}
+    
     import json
     res = requests.post(url=url, data=json.dumps(data), headers=headers)
     
@@ -467,7 +463,7 @@ def upload(baseurl):
     jobid = body
 
     print("PDF uploaded, job id =", jobid)
-    return
+    return jobid
 
   except Exception as e:
     logging.error("**ERROR: upload() failed:")
@@ -502,7 +498,7 @@ def download(baseurl):
     # call the web service:
     #
     url = baseurl + "/results/" + jobid
-    res = requests.get(url=url)
+    res = web_service_get(url=url)
     
     # doneTODO ???
 
@@ -569,6 +565,166 @@ def download(baseurl):
     logging.error(e)
     return
 
+def upload_and_poll(baseurl):
+  
+  try:
+    # print("Enter PDF filename>")
+    # local_filename = input()
+    # print("Enter user id>")
+    # userid = input()
+    # url = baseurl + "/pdf"
+    def upload_step():
+      print("Enter PDF filename>")
+      local_filename = input()
+
+      if not pathlib.Path(local_filename).is_file():
+        print("PDF file '", local_filename, "' does not exist...")
+        return
+
+      print("Enter user id>")
+      userid = input()
+
+      #
+      # build the data packet. First step is read the PDF
+      # as raw bytes:
+      #
+      infile = open(local_filename, "rb")
+      bytes = infile.read()
+      infile.close()
+
+      #
+      # now encode the pdf as base64. Note b64encode returns
+      # a bytes object, not a string. So then we have to convert
+      # (decode) the bytes -> string, and then we can serialize
+      # the string as JSON for upload to server:
+      #
+      
+      
+      # doneTODO: data = ???
+      # doneTODO: datastr = ???
+      data = base64.b64encode(bytes)
+      datastr = data.decode('utf-8')
+      data = {"filename": local_filename, "data": datastr}
+
+      #
+      # call the web service:
+      #
+      headers = {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+      }
+      url = baseurl + f"/pdf/{userid}"
+      
+      import json
+      res = requests.post(url=url, data=json.dumps(data), headers=headers)
+      
+      # doneTODO: ???
+
+      #
+      # let's look at what we got back:
+      #
+      if res.status_code == 200: #success
+        pass
+      elif res.status_code == 400: # no such user
+        body = res.json()
+        print(body)
+        return
+      else:
+        # failed:
+        print("Failed with status code:", res.status_code)
+        print("url: " + url)
+        if res.status_code == 500:
+          # we'll have an error message
+          body = res.json()
+          print("Error message:", body)
+        #
+        return
+
+      #
+      # success, extract jobid:
+      #
+      body = res.json()
+
+      jobid = body
+      return jobid
+    job_id = upload_step()
+    if job_id is None:
+      return
+    url = baseurl + "/results/" + job_id
+    def download_step():
+      res = web_service_get(url=url)
+      
+      # doneTODO ???
+
+
+      #
+      # let's look at what we got back:
+      #
+      print(f"Status code: {res.status_code}")
+      if res.status_code == 200: #success
+        pass
+        
+      elif res.status_code == 400: # no such job
+        body = res.json()
+        print(body)
+        return True
+      elif res.status_code in [480, 481, 482]:  # uploaded
+        msg = res.json()
+        # print("No results available yet...")
+        print("Job status:", msg)
+        return 'error' in msg
+      else:
+        # failed:
+        print("Failed with status code:", res.status_code)
+        print("url: " + url)
+        if res.status_code == 500:
+          # we'll have an error message
+          body = res.json()
+          print("Error message:", body)
+        #
+        return True
+        
+      #
+      # if we get here, status code was 200, so we
+      # have results to deserialize and display:
+      #
+      
+      body = ""
+      
+      # deserialize the message body:
+      # doneTODO: body = ???
+      body = res.text
+      # import pdb;pdb.set_trace()
+      datastr = body
+
+      #
+      # encode the data string to obtain the raw bytes in base64,
+      # then call b64decode to obtain the original raw bytes.
+      # Finally, decode() the bytes to obtain the results as a 
+      # printable string.
+      #
+      
+      # results = ""
+      
+      # doneTODO: base64_bytes = ???
+      # doneTODO: bytes = ???
+      # doneTODO: results = ???
+      base64_bytes = datastr.encode('utf-8')
+      decoded_bytes = base64.b64decode(base64_bytes)
+      results = decoded_bytes.decode('utf-8')
+      print(results)
+      return True
+    while True:
+      if download_step():
+        break
+      import time
+      import random
+      time.sleep(random.randint(1,5))
+  except Exception as e:
+    logging.error("**ERROR: upload_and_poll() failed:")
+    logging.error("url: " + url)
+    logging.error(e)
+    return
 
 ############################################################
 # main
