@@ -414,8 +414,8 @@ def upload(baseurl):
     #
     
     
-    # TODO: data = ???
-    # TODO: datastr = ???
+    # doneTODO: data = ???
+    # doneTODO: datastr = ???
     data = base64.b64encode(bytes)
     datastr = data.decode('utf-8')
     data = {"filename": local_filename, "data": datastr}
@@ -435,9 +435,9 @@ def upload(baseurl):
   "body": "{ \"filename\": \"junkdata.pdf\", \"data\": \"MQ0KMg0KMw0KNA0KNQ0KNg0KNw0KOA0KOQ0KMTANCjExCjEyCjEzCjE0CjE1CjE2CjE3CjE4CjE5CjIwCjIxCjIyCjIzCg==\" }"
 }
     import json
-    res = requests.post(url=url, data=json.dumps(test_dict), headers=headers)
+    res = requests.post(url=url, data=json.dumps(data), headers=headers)
     
-    # TODO: ???
+    # doneTODO: ???
 
     #
     # let's look at what we got back:
@@ -501,10 +501,11 @@ def download(baseurl):
     #
     # call the web service:
     #
-
-    res = None
+    url = baseurl + "/results/" + jobid
+    res = requests.get(url=url)
     
-    # TODO ???
+    # doneTODO ???
+
 
     #
     # let's look at what we got back:
@@ -539,8 +540,9 @@ def download(baseurl):
     body = ""
     
     # deserialize the message body:
-    # TODO: body = ???
-
+    # doneTODO: body = ???
+    body = res.text
+    # import pdb;pdb.set_trace()
     datastr = body
 
     #
@@ -550,12 +552,14 @@ def download(baseurl):
     # printable string.
     #
     
-    results = ""
+    # results = ""
     
-    # TODO: base64_bytes = ???
-    # TODO: bytes = ???
-    # TODO: results = ???
-
+    # doneTODO: base64_bytes = ???
+    # doneTODO: bytes = ???
+    # doneTODO: results = ???
+    base64_bytes = datastr.encode('utf-8')
+    decoded_bytes = base64.b64decode(base64_bytes)
+    results = decoded_bytes.decode('utf-8')
     print(results)
     return
 
@@ -641,6 +645,8 @@ try:
       upload(baseurl)
     elif cmd == 5:
       download(baseurl)
+    elif cmd == 6:
+      upload_and_poll(baseurl)
     else:
       print("** Unknown command, try again...")
     #
