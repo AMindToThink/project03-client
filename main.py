@@ -413,18 +413,29 @@ def upload(baseurl):
     # the string as JSON for upload to server:
     #
     
-    datastr = ""
     
     # TODO: data = ???
     # TODO: datastr = ???
-
+    data = base64.b64encode(bytes)
+    datastr = data.decode('utf-8')
     data = {"filename": local_filename, "data": datastr}
 
     #
     # call the web service:
     #
-    
-    res = None
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
+    url = baseurl + f"/pdf/{userid}"
+    test_dict = {
+  "pathParameters": {
+    "userid": "80001"
+  },
+  "body": "{ \"filename\": \"junkdata.pdf\", \"data\": \"MQ0KMg0KMw0KNA0KNQ0KNg0KNw0KOA0KOQ0KMTANCjExCjEyCjEzCjE0CjE1CjE2CjE3CjE4CjE5CjIwCjIxCjIyCjIzCg==\" }"
+}
+    import json
+    res = requests.post(url=url, data=json.dumps(test_dict), headers=headers)
     
     # TODO: ???
 
